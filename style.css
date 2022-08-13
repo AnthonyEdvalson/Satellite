@@ -1,0 +1,95 @@
+body {
+    padding: 0; 
+    margin: 0; 
+    overscroll-behavior-y: none; 
+    height: 100%; 
+    overflow: auto;
+    font-family: 'Signika', sans-serif;
+    font-weight: 300;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Lato', sans-serif;
+    font-weight: 600;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+canvas {
+    position: absolute;
+}
+
+.topbar {
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 20px;
+}
+
+.sidebar {
+    position: absolute; 
+    top: 100px; 
+    left: 0; 
+    width: 200px; 
+    background-color: rgba(0, 0, 0, 0.2); 
+    padding: 10px;
+    display: none;
+}
+
+.callout {
+    position: absolute; 
+    display: none;
+    background-color: #404850;
+    color: white;
+    transform: translate(-50%, -100%) translate(0px, -50px);
+    padding: 5px 7px;
+    border: 1px solid #303840;
+}
+
+.callout::before {
+    content: '';
+    background-color: #404850;
+    width: 10px;
+    height: 10px;
+    transform: translate(-50%, 0) rotate(45deg);
+    display: block;
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+}
+
+.callout h1 {
+    margin: 0;
+    font-size: 20px;
+    padding-right: 7px;
+}
+
+.callout a {
+    display: inline-block;
+}
+
+.callout a i {
+    opacity: 0.6;
+}
+
+.callout a:hover i {
+    opacity: 1;
+}
+
+.editframe {
+    display: none; 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0; 
+    pointer-events: none;
+}
