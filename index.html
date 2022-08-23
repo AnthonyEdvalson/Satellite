@@ -10,45 +10,53 @@
     <body>
         <canvas id="map" width="800" height="600"></canvas>
         <canvas id="anno" width="800" height="600" tabindex="-1"></canvas>
-        <div id="edit-mode" class="editframe">
-            <div class="topbar">
-                <button onclick="save()">SAVE</button>
-            </div>
-            <div class="sideBar" id="edit">
-                <h1 id="edit-head">0: Name</h1>
-                <input type="text" id="edit-name" placeholder="Name" oninput="editorInvalidate()"/>
-                <input type="text" id="edit-page" placeholder="Page URL" oninput="editorInvalidate()"/>
-                <select id="edit-category" oninput="editorInvalidate()">
-                    <!--option value="label">Label</option-->
-                    <option value="part">Severed Part</option>
-                    <option value="landmark">Landmark</option>
-                    <option value="caves">Caves</option>
-                    <option value="ruins">Ruins</option>
-                    <option value="quest">Quest</option>
-                    <option value="npc">NPC</option>
-                    <option value="merchant">Merchant</option>
-                    <option value="enemy">Dangerous Creature</option>
-                    <option value="orb">Bolstering Orb</option>
-                    <option value="gold">Gold</option>
-                    <option value="artifact">Artifact</option>
-                    <option value="weapon">Weapon</option>
-                    <option value="lost">Lost Structure</option>
-                </select>
-                <select id="edit-layer" oninput="editorInvalidate()">
-                    <option value="public">public</option>
-                    <option value="gm">gm</option>
-                </select>
-            </div>
+        <div class="topbar">
+            <span id="time"></span>
+            <button onclick="addNow(1)">+1d</button>
+            <button onclick="addNow(1 / 24)">+1h</button>
+            <button onclick="addNow(1 / 24 / 60)">+1m</button>
+            <button onclick="addNow(-1 / 24 / 60)">-1m</button>
+            <button onclick="addNow(-1 / 24)">-1h</button>
+            <button onclick="addNow(-1)">-1d</button>
+            <button onclick="save()" style="display: none" id="save">SAVE</button>
+        </div>
+        <div class="sideBar" id="edit">
+            <h1 id="edit-head">0: Name</h1>
+            <input type="text" id="edit-name" placeholder="Name" oninput="editorInvalidate()"/>
+            <input type="text" id="edit-page" placeholder="Page URL" oninput="editorInvalidate()"/>
+            <select id="edit-category" oninput="editorInvalidate()">
+                <!--option value="label">Label</option-->
+                <option value="part">Severed Part</option>
+                <option value="landmark">Landmark</option>
+                <option value="settlement">Settlement</option>
+                <option value="city">City</option>
+                <option value="caves">Caves</option>
+                <option value="ruins">Ruins</option>
+                <option value="quest">Quest</option>
+                <option value="npc">NPC</option>
+                <option value="merchant">Merchant</option>
+                <option value="enemy">Dangerous Creature</option>
+                <option value="orb">Bolstering Orb</option>
+                <option value="gold">Gold</option>
+                <option value="artifact">Artifact</option>
+                <option value="weapon">Weapon</option>
+                <option value="lost">Lost Structure</option>
+            </select>                    
+            <select id="edit-layer" oninput="editorInvalidate()">
+                <option value="public">public</option>
+                <option value="gm">gm</option>
+            </select>
         </div>
         <div class="callout" id="callout">
-            <a id="callout-head" href=""></a>
-            <a id="callout-link" href="">
+            <a id="callout-head" href="" target="_blank"></a>
+            <a id="callout-link" href="" target="_blank">
                 <i id="callout-link" class="fa fa-link"></i>
             </a>
         </div>
     </body>
     <footer>
         <script type="text/javascript" src="loc.js"></script>
+        <script src="chron.js" type="text/javascript"></script>
         <script src="main.js" type="text/javascript"></script>
     </footer>
 </html>
