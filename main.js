@@ -6,7 +6,7 @@ if (window.location.hostname == "") {
 }
 
 let pxr = window.devicePixelRatio;
-var showTimeline = true;
+var showUI = true;
 
 function loadImage(url) {
     let img = new Image();
@@ -172,7 +172,7 @@ window.onload = function() {
             zoom = 2;
             mapScale = 4;
             focused = params.l;
-            showTimeline = false;
+            showUI = false;
             updateTimeline(null, null);
         }
     }
@@ -534,7 +534,7 @@ function drawAnno() {
 
 let timelineCache = null;
 function updateTimeline(tz, wz) {
-    if (!showTimeline) {
+    if (!showUI) {
         document.getElementById("bottomBar").style.display = "none";
         document.getElementById("edit").style.display = "none";
         document.getElementById("topBar").style.display = "none";
@@ -765,7 +765,7 @@ function focusOn(target) {
 }
 
 function drawEditor() {
-    if (focused == null) {
+    if (focused == null || !showUI) {
         document.getElementById("edit").style.display = "none";
         return;
     }
