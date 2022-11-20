@@ -168,7 +168,7 @@ window.onload = function() {
         if (l) {
             mapX = l.x;
             mapY = l.y;
-            zoom = 0;
+            zoom = 2;
             focused = params.l;
         }
     }
