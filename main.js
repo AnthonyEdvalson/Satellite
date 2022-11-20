@@ -415,7 +415,7 @@ function drawAnno() {
     for (let [id, l] of pins) {
         let p = mapToPixel(l.x, l.y);
         
-        ctx.globalAlpha = l.layer == 'public' ? 1 : 0.6;
+        ctx.globalAlpha = 1;// l.layer == 'public' ? 1 : 0.6;
         ctx.beginPath();
         ctx.moveTo(p.x, p.y);
         ctx.lineTo(p.x - 11.6, p.y - 21.1);
