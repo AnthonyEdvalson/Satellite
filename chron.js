@@ -52,7 +52,7 @@ const arcs = {
         off: 10,
         lock: "day"
     },
-    "KHA": {
+    "KAL": {
         t0: 235,
         t1: 260,
         off: 11,
@@ -80,32 +80,77 @@ const arcs = {
     }
 }
 
+const holidays = {
+    "VAT": {
+        51: "First of Summer",
+    },
+    "SHA": {
+    },
+    "PEN": {
+        7: "Queen Birthday",
+        97: "Peace Day",
+        163: "Rememberance Eve",
+    },
+    "STA": {
+        108: "Thakii",
+        109: "Thakii",
+        110: "Thakii",
+        111: "Thakii",
+        112: "Thakii",
+        113: "Thakii",
+        114: "Thakii",
+        115: "Thakii",
+        116: "Thakii",
+    },
+    "KAL": {
+        3: "Death of ???",
+        71: "Wellspring Day",
+        91: "Dragon Day",
+        148: "Elders Day",
+        156: "Founding Day",
+        175: "Visiret"
+    },
+    "MAR": {
+    },
+    "LAP": {
+        75: "Summer Solstice",
+        175: "Winter Solstice"
+    },
+
+    "ALL": {
+        1: "Day of Dawn",
+        164: "Rememberance Day",
+    }
+}
+// Add everything in ALL to the other time zones.
+for (let tz of Object.keys(holidays)) {
+    if (tz !== "ALL") {
+        for (let day of Object.keys(holidays["ALL"])) {
+            holidays[tz][day] = holidays["ALL"][day];
+        }
+    }
+}
+
 if (isNaN(now)) {
-    now = NORToLocal(1277 * 200 + 90 + 8 / 24, "PEN"); // 40th of Summer, 1277 8:00 PEN
+    now = NORToLocal(1677 * 200 + 90 + 8 / 24, "PEN"); // 40th of Summer, 1677 8:00 PEN
 }
 
 
 function formatDate(dt) {
-    let day = Math.floor(dt % 50) + 1;
-    let season = ["Spring", "Summer", "Autumn", "Winter"][Math.floor(dt / 50) % 4];
-    let year = Math.floor(dt / 200);
-    
+    let day = getDayOfSeason(dt) + 1;
+    let season = ["Spring", "Summer", "Autumn", "Winter"][getSeason(dt)];
+    let year = getYear(dt);
     return `${day}${[,'st','nd','rd'][day/10%10^1&&day%10]||'th'} of ${season}, ${year}`;
 }
 function formatDateShort(dt) {
-    let day = Math.floor(dt % 50) + 1;
-    let season = ["Spr", "Sum", "Aut", "Win"][Math.floor(dt / 50) % 4];
-
+    let day = getDayOfSeason(dt) + 1;
+    let season = ["Spr", "Sum", "Aut", "Win"][getSeason(dt)];
     return `${season} ${day}`;
 }
 
 function formatTime(dt) {
-    let t = dt % 1;
-    let hour = Math.floor(t * 24);
-    if (hour == 0)
-        hour = 24;
-    let minute = Math.floor(((t * 24) % 1) * 60);
-    
+    let hour = getHour(dt);
+    let minute = getMinute(dt);
     return `${hour}:${minute < 10 ? '0' : ''}${minute}`;
 }
 
@@ -125,6 +170,14 @@ function getLighting(dt, arcName) {
     if ("lock" in arc) {
         return arc.lock;
     }
+
+    if (getDayOfYear(dt) + 1 == 1) {
+        return "day"; // Day of Dawn
+    }
+    if (getDayOfYear(dt) + 1 == 164) {
+        return "night"; // Rememberance Day
+    }
+
     if (hour < arc.break) {
         return "night";
     }
@@ -174,8 +227,34 @@ function setNow(ndt) {
 }
 
 function addNow(dt) {
-    console.log(now, dt)
     setNow(now + dt);
+}
+
+function getYear(dt) {
+    return Math.floor(dt / 200);
+}
+
+function getSeason(dt) {
+    return Math.floor((dt / 50) % 4);
+}
+
+function getDayOfSeason(dt) {
+    return Math.floor(dt % 50);
+}
+
+function getDayOfYear(dt) {
+    return Math.floor(dt % 200);
+}
+
+function getHour(dt) {
+    let h = Math.floor((dt % 1) * 24)
+    if (h == 0)
+        return 24;
+    return h;
+}
+
+function getMinute(dt) {
+    return Math.floor((((dt % 1) * 24) % 1) * 60);
 }
 
 function getArcFromHeading(theta) {
@@ -192,7 +271,7 @@ function getArcFromHeading(theta) {
         }
     }
 
-    console.log("ERROR: no arc found for heading " + theta);
+    console.error("ERROR: no arc found for heading " + theta);
     return null;
 }
 
@@ -203,3 +282,4 @@ function nowNOR() {
 function nowLocal(arcName) {
     return NORToLocal(now, arcName);
 }
+

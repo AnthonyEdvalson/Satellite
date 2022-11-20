@@ -1,12 +1,16 @@
 const tau = Math.PI * 2;
 
-var loc = JSON.parse(localStorage.getItem("loc"));
+//var loc = JSON.parse(localStorage.getItem("loc"));
+if (window.location.hostname == "") {
+    loc = JSON.parse(localStorage.getItem("loc"));
+}
 
 let pxr = window.devicePixelRatio;
 
 function loadImage(url) {
     let img = new Image();
     img.src = url;
+    img.decode().then(() => console.log(url))
     return img;
 }
 
@@ -57,11 +61,11 @@ let mouseY = 0;
 let hovered = null;
 let focused = null;
 
-let mapX = 0.66; // map space x position at the screen center
-let mapY = 0.43; // map space y position at the screen center
-let mapScale = 4; // map is width of screen when mapScale is 1
+let mapX = 0.5; // map space x position at the screen center
+let mapY = 0.5; // map space y position at the screen center
+let mapScale = 0.5; // map is width of screen when mapScale is 1
 
-let zoom = 2;
+let zoom = Math.log2(mapScale);
 
 let ruler0 = null;
 let ruler1 = null;
@@ -259,6 +263,7 @@ document.getElementById("anno").addEventListener('dblclick', (e) => {
     document.getElementById("edit-name").select();
 });
 
+var temp = []
 document.getElementById("anno").addEventListener('click', (e) => {
     focusOn(hovered);
 } );
@@ -298,6 +303,15 @@ document.addEventListener('keydown', (e) => {
         rulerMode = (rulerMode + 1) % rulerModes.length;
         drawAnno();
     }
+
+    if (e.key == "t") {
+        let p = pixelToMap(mouseX, mouseY);
+        temp.push(p);
+        console.log(JSON.stringify(temp));
+    }
+    if (e.key == "r") {
+        temp = [];
+    }
 } );
 
 function drawAll() {
@@ -317,7 +331,8 @@ function drawAll() {
 
     let p0 = mapToPixel(0, 0);
     let p1 = mapToPixel(1, 1);
-    ctx.drawImage(mapImg, p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
+    ctx.drawImage(mapImg, p0.x, p0.y, p1.x - p0.x, p1.y - p0.y, );
+
     drawAnno();
     drawEditor();
 }
@@ -335,6 +350,7 @@ function drawAnno() {
 
     let mouseMap = pixelToMap(mouseX, mouseY);
     let tz = getArcFromPoint(mouseMap.x, mouseMap.y);
+    let wz = getZoneFromPoint(mouseMap.x, mouseMap.y);
     document.getElementById("time").innerHTML = formatDateTime(nowLocal(tz)) + " " + tz;
 
     let lightTime = nowNOR();
@@ -371,6 +387,21 @@ function drawAnno() {
         ctx.globalAlpha = 1;
     }
 
+    for (let [name, zone] of Object.entries(weatherZones)) {
+        ctx.beginPath();
+
+        let prev = mapToPixel(zone.bounds[zone.bounds.length-1].x, zone.bounds[zone.bounds.length-1].y)
+        ctx.moveTo(prev.x, prev.y);
+        for (let point of zone.bounds) {
+            let next = mapToPixel(point.x, point.y)
+            ctx.lineTo(next.x, next.y);
+            prev = next;
+        }
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.4)"
+        ctx.setLineDash([5, 5]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
 
     let pins = Object.entries(loc.pins);
     // sort by y
@@ -412,7 +443,7 @@ function drawAnno() {
         callout.style.top = `${p.y}px`;
         document.getElementById("callout-head").innerHTML = "<h1>" + l.name + "</h1>";
         document.getElementById("callout-head").href = l.page;
-        document.getElementById("callout-link").href = window.location.href.split('?')[0] + "?l=" + focused;
+        document.getElementById("callout-link").onclick = () => navigator.clipboard.writeText("https://anthonyedvalson.github.io/Satellite/?l=" + focused);
     }
     else {
         callout.style.display = "none";
@@ -484,6 +515,199 @@ function drawAnno() {
             ctx.fillStyle = "black";
             ctx.fillText(d, t_x - 3, t_y - 8);
         };
+    }
+    
+    let s = mouseMap.x.toFixed(3) + ", " + mouseMap.y.toFixed(3)
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 1;
+    ctx.font = "16px sans-serif";
+    ctx.strokeText(s, 5, 45)
+    ctx.fillStyle = "white";
+    ctx.fillText(s, 5, 45);
+
+    updateTimeline(tz, wz)
+}
+
+let timelineCache = null;
+function updateTimeline(tz, wz) {
+    let start = nowLocal(tz);
+    if (timelineCache && tz == timelineCache.tz && wz == timelineCache.wz && start == timelineCache.start) {
+        return;
+    }
+    timelineCache = {tz, wz, start};
+
+    // Rows:
+    // Weather, an item is added every 4 hours. Hovering gives details, and color is the condition
+    // Travel, while the ruler is used, this row is added and It shows when travel / rest is happening.
+    
+    let timeline = document.getElementById("timeline-time");
+    let timeline2 = document.getElementById("timeline-time2");
+    let weatherconline = document.getElementById("timeline-weather-condition");
+    let weathertempline = document.getElementById("timeline-weather-temp");
+    let weatherwindline = document.getElementById("timeline-weather-wind");
+    let weathercloudline = document.getElementById("timeline-weather-clouds");
+    let travelline = document.getElementById("timeline-travel");
+    let timelabel = document.getElementById("timelabel-time");
+    let timelabel2 = document.getElementById("timelabel-time2");
+    let weatherconlabel = document.getElementById("timelabel-weather-condition");
+    let weathertemplabel = document.getElementById("timelabel-weather-temp");
+    let weatherwindlabel = document.getElementById("timelabel-weather-wind");
+    let weathercloudlabel = document.getElementById("timelabel-weather-clouds");
+    let travellabel = document.getElementById("timelabel-travel");
+    for (let l of [timeline, timeline2, weatherconline, weathertempline, weatherwindline, weathercloudline, travelline]) {
+        while (l.firstChild) {
+            l.removeChild(l.firstChild);
+        }
+    }
+    
+    let hourWidth = 20;
+    let dayWidth = 24 * hourWidth;
+
+    let days = 100;
+
+    let dt2px = (dt) => (dt - start) * dayWidth;
+
+    let prevL = {};
+    let createItem = (m, l, start, end, text, color) => {
+        let prev = prevL[m];
+        if (prev && Math.abs(prev.end - start) < 0.0001 && prev.text == text && prev.color == color && Math.floor(prev.start) == Math.floor(start)) {
+            prev.end = end;
+            return;
+        }
+        else if (prev) {
+            let item = document.createElement("div");
+            item.style.width = dt2px(prev.end) - dt2px(prev.start) + "px";
+            item.style.left = dt2px(prev.start) + "px";
+            item.style.backgroundColor = prev.color;
+            item.innerText = prev.text;
+            item.classList.add("timeitem");
+            l.appendChild(item);
+        }
+
+        prevL[m] = {start, end, text, color};
+    }
+
+    timelabel.innerText = tz;
+    for (let i = 0; i < days * 24; i++) {
+        let hourStart = Math.floor(start * 24 + i) / 24 + 0.0001;
+        let dayOfYear = getDayOfYear(hourStart) + 1;
+        let dayStart = Math.floor(hourStart);
+        let isDayStart = Math.abs(Math.round(hourStart) - hourStart) < 0.001;
+
+        let lighting = getLighting(hourStart + 0.25 / 24, tz);
+        let color = {"night": "#112244", "day": "#3366CC", "dawn": "#224488", "dusk": "#224488"}[lighting];
+
+        createItem(
+            0,
+            timeline,
+            hourStart, 
+            hourStart + 1/24, 
+            isDayStart ? ["P", "S", "A", "E"][getSeason(hourStart)] + (getDayOfSeason(hourStart) + 1) : getHour(hourStart), 
+            isDayStart ? "#081122" : color);
+
+        if (isDayStart && dayOfYear in holidays[tz]) {
+            createItem(
+                7,
+                timeline2,
+                dayStart,
+                dayStart + 1,
+                holidays[tz][dayOfYear],
+                "#BB7733"
+            )
+        }
+    }
+    createItem(7, timeline2, start + days, start + days, "", "transparent");
+
+    let forecast = getForecast(wz, tz, start, days);
+
+    weatherconlabel.innerText = wz;
+    for (let event of forecast) {
+        let start = event.time;
+        let end = event.time + 2/24;
+        if (event.condition !== "CALM") {
+        createItem(
+            1,
+            weatherconline,
+            start,
+            end,
+            event.condition,
+            event.color);
+        }
+        let t = event.windChill;
+        let tempColor = "#013";
+        if (t >= -60) tempColor = "#126";
+        if (t >= -20) tempColor = "#47A";
+        if (t >=   0) tempColor = "#7AB";
+        if (t >=  32) tempColor = "#8B8";
+        if (t >=  90) tempColor = "#BA7";
+        if (t >= 110) tempColor = "#A74";
+        if (t >= 130) tempColor = "#621";
+        if (t >= 150) tempColor = "#310";
+        createItem(
+            2,
+            weathertempline,
+            start,
+            end,
+            t,
+            tempColor);
+        let w = event.wind;
+        let windColor = "#BBB";
+        if (w > 0) windColor = "#AAA";
+        if (w >= 10) windColor = "#999";
+        if (w >= 20) windColor = "#777";
+        if (w >= 30) windColor = "#555";
+        if (w >= 45) windColor = "#333";
+        if (w >= 75) windColor = "#111";
+        createItem(
+            3,
+            weatherwindline,
+            start,
+            end,
+            Math.round(event.wind) + " mph",
+            windColor);
+        let c = event.clouds;
+        let cloudColor = "#59D";
+        if (c >= 0.2) cloudColor = "#79C";
+        if (c >= 0.4) cloudColor = "#89B";
+        if (c >= 0.8) cloudColor = "#567";
+        if (c >= 1.0) cloudColor = "#345";
+        createItem(
+            4,
+            weathercloudline,
+            start,
+            end,
+            Math.round(100 * event.clouds) + "%",
+            cloudColor);
+    }
+    // TODO alt TZ, same as time, but for a different timezone
+    travellabel.innerText = rulerModes[rulerMode].name;
+    if (ruler0 && ruler1) {
+        let d_miles = Math.sqrt(Math.pow(ruler0.x - ruler1.x, 2) + Math.pow(ruler0.y - ruler1.y, 2)) * mapWidthMiles;
+        let m = rulerModes[rulerMode];
+        let t_days = estimateTime(d_miles, m.miles_per_hour, m.miles_per_day);
+
+        for (let d = 0; d < t_days; d++) {
+            let hoursPerDay = m.miles_per_day / m.miles_per_hour;
+
+            createItem(
+                5,
+                travelline,
+                start + d,
+                start + Math.min(t_days, d + hoursPerDay / 24),
+                "Travel " + (d + 1),
+                "#BB7733");
+
+            if (d < t_days - 1) {
+                createItem(
+                    6,
+                    travelline,
+                    start + d + hoursPerDay / 24,
+                    start + d + 1,
+                    "Rest " + (d + 1),
+                    "#3377BB"
+                );
+            }
+        }
     }
 }
 
