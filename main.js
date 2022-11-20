@@ -6,6 +6,7 @@ if (window.location.hostname == "") {
 }
 
 let pxr = window.devicePixelRatio;
+var showTimeline = true;
 
 function loadImage(url) {
     let img = new Image();
@@ -169,7 +170,10 @@ window.onload = function() {
             mapX = l.x;
             mapY = l.y;
             zoom = 2;
+            mapScale = 4;
             focused = params.l;
+            showTimeline = false;
+            updateTimeline(null, null);
         }
     }
 
@@ -517,19 +521,25 @@ function drawAnno() {
         };
     }
     
-    let s = mouseMap.x.toFixed(3) + ", " + mouseMap.y.toFixed(3)
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 1;
-    ctx.font = "16px sans-serif";
-    ctx.strokeText(s, 5, 45)
-    ctx.fillStyle = "white";
-    ctx.fillText(s, 5, 45);
+    //let s = mouseMap.x.toFixed(3) + ", " + mouseMap.y.toFixed(3)
+    //ctx.strokeStyle = "black";
+    //ctx.lineWidth = 1;
+    //ctx.font = "16px sans-serif";
+    //ctx.strokeText(s, 5, 45)
+    //ctx.fillStyle = "white";
+    //ctx.fillText(s, 5, 45);
 
     updateTimeline(tz, wz)
 }
 
 let timelineCache = null;
 function updateTimeline(tz, wz) {
+    if (!showTimeline) {
+        document.getElementById("bottomBar").style.display = "none";
+        document.getElementById("edit").style.display = "none";
+        document.getElementById("topBar").style.display = "none";
+        return;
+    }
     let start = nowLocal(tz);
     if (timelineCache && tz == timelineCache.tz && wz == timelineCache.wz && start == timelineCache.start) {
         return;
