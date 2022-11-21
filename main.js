@@ -96,6 +96,11 @@ let rulerModes = [
         name: "difficult",
         miles_per_hour: 1.5,
         miles_per_day: 12
+    },
+    {
+        name: "miles",
+        miles_per_hour: 1,
+        miles_per_day: 1
     }
 ]
 let mapWidthMiles = 1024;
@@ -355,61 +360,64 @@ function drawAnno() {
     let mouseMap = pixelToMap(mouseX, mouseY);
     let tz = getArcFromPoint(mouseMap.x, mouseMap.y);
     let wz = getZoneFromPoint(mouseMap.x, mouseMap.y);
-    document.getElementById("time").innerHTML = formatDateTime(nowLocal(tz)) + " " + tz;
 
-    let lightTime = nowNOR();
-    let lighting = getAllLighting(lightTime);
-    let dawnspire = loc.pins[0];
-    let p0 = mapToPixel(dawnspire.x, dawnspire.y);
-    for (let l of Object.values(lighting)) {
-        let t0 = -tau / 4 + l.t0 / 360 * tau;
-        let t1 = -tau / 4 + l.t1 / 360 * tau;
+    if (showUI) {
+        document.getElementById("time").innerHTML = formatDateTime(nowLocal(tz)) + " " + tz;
 
-        let color = {
-            "day": "transparent",
-            "night": "black",
-            "dawn": "orange",
-            "dusk": "orange",
-        }[l.light] 
+        let lightTime = nowNOR();
+        let lighting = getAllLighting(lightTime);
+        let dawnspire = loc.pins[0];
+        let p0 = mapToPixel(dawnspire.x, dawnspire.y);
+        for (let l of Object.values(lighting)) {
+            let t0 = -tau / 4 + l.t0 / 360 * tau;
+            let t1 = -tau / 4 + l.t1 / 360 * tau;
 
-        ctx.globalAlpha = 0.1;
-        ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y);
-        ctx.lineTo(p0.x + Math.cos(t0) * 100000, p0.y + Math.sin(t0) * 100000);
-        ctx.lineTo(p0.x + Math.cos(t1) * 100000, p0.y + Math.sin(t1) * 100000);
-        ctx.fillStyle = color;
-        ctx.fill();
-        ctx.globalAlpha = 0.4;
+            let color = {
+                "day": "transparent",
+                "night": "black",
+                "dawn": "orange",
+                "dusk": "orange",
+            }[l.light] 
 
-        ctx.beginPath();
-        ctx.moveTo(p0.x + Math.cos(t1) * 100000, p0.y + Math.sin(t1) * 100000);
-        ctx.lineTo(p0.x, p0.y);
-        ctx.lineTo(p0.x + Math.cos(t0) * 100000, p0.y + Math.sin(t0) * 100000);
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-    }
+            ctx.globalAlpha = 0.1;
+            ctx.beginPath();
+            ctx.moveTo(p0.x, p0.y);
+            ctx.lineTo(p0.x + Math.cos(t0) * 100000, p0.y + Math.sin(t0) * 100000);
+            ctx.lineTo(p0.x + Math.cos(t1) * 100000, p0.y + Math.sin(t1) * 100000);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.globalAlpha = 0.4;
 
-    for (let [name, zone] of Object.entries(weatherZones)) {
-        ctx.beginPath();
-
-        let prev = mapToPixel(zone.bounds[zone.bounds.length-1].x, zone.bounds[zone.bounds.length-1].y)
-        ctx.moveTo(prev.x, prev.y);
-        for (let point of zone.bounds) {
-            let next = mapToPixel(point.x, point.y)
-            ctx.lineTo(next.x, next.y);
-            prev = next;
+            ctx.beginPath();
+            ctx.moveTo(p0.x + Math.cos(t1) * 100000, p0.y + Math.sin(t1) * 100000);
+            ctx.lineTo(p0.x, p0.y);
+            ctx.lineTo(p0.x + Math.cos(t0) * 100000, p0.y + Math.sin(t0) * 100000);
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
         }
-        ctx.strokeStyle = "rgba(0, 0, 0, 0.4)"
-        ctx.setLineDash([5, 5]);
-        ctx.stroke();
-        ctx.setLineDash([]);
+
+        for (let [name, zone] of Object.entries(weatherZones)) {
+            ctx.beginPath();
+
+            let prev = mapToPixel(zone.bounds[zone.bounds.length-1].x, zone.bounds[zone.bounds.length-1].y)
+            ctx.moveTo(prev.x, prev.y);
+            for (let point of zone.bounds) {
+                let next = mapToPixel(point.x, point.y)
+                ctx.lineTo(next.x, next.y);
+                prev = next;
+            }
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.4)"
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
     }
 
     let pins = Object.entries(loc.pins);
     // sort by y
-    pins.sort((a, b) => a[1].y - b[1].y);
+    pins.sort((a, b) => (a[0] === focused ? 10000000 : a[1].y) - (b[0] === focused ? 10000000 : b[1].y));
 
     hovered = null;
     for (let [id, l] of pins) {
