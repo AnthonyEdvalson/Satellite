@@ -169,8 +169,8 @@ window.onload = function() {
         if (l) {
             mapX = l.x;
             mapY = l.y;
-            zoom = 2;
-            mapScale = 4;
+            zoom = 3;
+            mapScale = 8;
             focused = params.l;
             showUI = false;
             updateTimeline(null, null);
@@ -188,7 +188,7 @@ document.getElementById("anno").addEventListener('wheel', (e) => {
     let zm = pixelToMap(zx, zy);
 
     zoom -= e.deltaY / 1000;
-    let zmax = Math.log2(mapImg.width / window.innerWidth * 2);
+    let zmax = Math.log2(mapImg.width / window.innerWidth * 4);
     zoom = Math.max(Math.min(zoom, zmax), -1);
     mapScale = Math.pow(2, zoom);
 
