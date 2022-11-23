@@ -169,9 +169,9 @@ window.onload = function() {
     const urlSearchParams = new URLSearchParams(window.location.search);
     const params = Object.fromEntries(urlSearchParams.entries());
 
-    if (params.l) {
+    if (params.l !== undefined) {
         let l = loc.pins[params.l];
-        if (l) {
+        if (l !== undefined) {
             mapX = l.x;
             mapY = l.y;
             zoom = 3;
@@ -408,7 +408,7 @@ function drawAnno() {
                 ctx.lineTo(next.x, next.y);
                 prev = next;
             }
-            ctx.strokeStyle = "rgba(0, 0, 0, 0.4)"
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
             ctx.setLineDash([5, 5]);
             ctx.stroke();
             ctx.setLineDash([]);
