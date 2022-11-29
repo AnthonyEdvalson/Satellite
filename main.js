@@ -188,6 +188,7 @@ window.onload = function() {
 // move controls
 
 document.getElementById("anno").addEventListener('wheel', (e) => {
+    e.preventDefault();
     let zx = e.clientX;
     let zy = e.clientY;
     let zm = pixelToMap(zx, zy);
@@ -209,6 +210,7 @@ document.getElementById("anno").addEventListener('wheel', (e) => {
 });
 
 document.getElementById("anno").addEventListener('mousemove', (e) => {
+    e.preventDefault();
     mouseX = e.clientX;
     mouseY = e.clientY;
 
@@ -578,10 +580,10 @@ function updateTimeline(tz, wz) {
         }
     }
     
-    let hourWidth = 20;
+    let hourWidth = 15;
     let dayWidth = 24 * hourWidth;
 
-    let days = 100;
+    let days = 200;
 
     let dt2px = (dt) => (dt - start) * dayWidth;
 
@@ -610,20 +612,30 @@ function updateTimeline(tz, wz) {
         let hourStart = Math.floor(start * 24 + i) / 24 + 0.0001;
         let dayOfYear = getDayOfYear(hourStart) + 1;
         let dayStart = Math.floor(hourStart);
-        let isDayStart = Math.abs(Math.round(hourStart) - hourStart) < 0.001;
+        //let isDayPreStart = Math.abs(Math.round(hourStart) - hourStart - 1/24) < 0.001;
+        //let isDayStart = Math.abs(Math.round(hourStart) - hourStart) < 0.001;
 
         let lighting = getLighting(hourStart + 0.25 / 24, tz);
         let color = {"night": "#112244", "day": "#3366CC", "dawn": "#224488", "dusk": "#224488"}[lighting];
+
+        let hour = getHour(hourStart);
+        let t = hour;
+        if (hour == 2) {
+            t = getDayOfSeason(hourStart) + 1;
+        }
+        if (hour == 1) {
+            t = ["HR", "HA", "HO", "EY"][getSeason(hourStart)];
+        }
 
         createItem(
             0,
             timeline,
             hourStart, 
             hourStart + 1/24, 
-            isDayStart ? ["P", "S", "A", "E"][getSeason(hourStart)] + (getDayOfSeason(hourStart) + 1) : getHour(hourStart), 
-            isDayStart ? "#081122" : color);
+            t, 
+            hour <= 2 ? "#081122" : color);
 
-        if (isDayStart && dayOfYear in holidays[tz]) {
+        if (hour == 1 && dayOfYear in holidays[tz]) {
             createItem(
                 7,
                 timeline2,

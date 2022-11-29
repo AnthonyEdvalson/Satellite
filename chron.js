@@ -90,6 +90,7 @@ const holidays = {
         7: "Queen Birthday",
         97: "Peace Day",
         163: "Rememberance Eve",
+        120: "Harvest Festival"
     },
     "STA": {
         108: "Thakii",
@@ -167,15 +168,15 @@ function getLighting(dt, arcName) {
     let hour = t * 24;
     let arc = arcs[arcName];
 
-    if ("lock" in arc) {
-        return arc.lock;
-    }
-
     if (getDayOfYear(dt) + 1 == 1) {
-        return "day"; // Day of Dawn
+        return "lock" in arc ? "night" : "day"; // Day of Dawn
     }
     if (getDayOfYear(dt) + 1 == 164) {
-        return "night"; // Rememberance Day
+        return "lock" in arc ? "day": "night"; // Rememberance Day
+    }
+
+    if ("lock" in arc) {
+        return arc.lock;
     }
 
     if (hour < arc.break) {
@@ -248,9 +249,7 @@ function getDayOfYear(dt) {
 
 function getHour(dt) {
     let h = Math.floor((dt % 1) * 24)
-    if (h == 0)
-        return 24;
-    return h;
+    return h + 1;
 }
 
 function getMinute(dt) {
