@@ -1,5 +1,5 @@
 var loc = {
-    "maxIndex": 220,
+    "maxIndex": 223,
     "pins": {
         "0": {
             "name": "The Dawnspire",
@@ -1298,7 +1298,7 @@ var loc = {
             "layer": "public"
         },
         "175": {
-            "name": "Enemy",
+            "name": "Giant Guardian",
             "x": 0.4373101719254393,
             "y": 0.3913273414012473,
             "page": "https://www.notion.so/Dangerous-Enemy-281cdbac00e346b69bdecba24d2ac6f2",
@@ -1610,7 +1610,7 @@ var loc = {
             "layer": "public"
         },
         "216": {
-            "name": "Sequoia Guardian",
+            "name": "Giant Guardian",
             "x": 0.8166949733811222,
             "y": 0.6576336254779483,
             "page": "https://www.notion.so/Sequoia-Guardian-90ad7f02184448e4845e8f460e030845",
@@ -1648,6 +1648,30 @@ var loc = {
             "page": "https://www.notion.so/Amaranthine-City-727408133b1347ed8f9691074bf2ec7a",
             "category": "landmark",
             "layer": "public"
+        },
+        "221": {
+            "name": "Sporeridden Giant",
+            "x": 0.8773044118979196,
+            "y": 0.5551233321649774,
+            "page": "",
+            "category": "enemy",
+            "layer": "public"
+        },
+        "222": {
+            "name": "Giant Guardian",
+            "x": 0.12386549753393156,
+            "y": 0.5771342454625228,
+            "page": "",
+            "category": "enemy",
+            "layer": "public"
+        },
+        "223": {
+            "name": "Giant Guardian",
+            "x": 0.8172778199512585,
+            "y": 0.7862648567572973,
+            "page": "",
+            "category": "enemy",
+            "layer": "public"
         }
     }
-};
+}
