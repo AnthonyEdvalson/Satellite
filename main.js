@@ -209,12 +209,18 @@ document.getElementById("anno").addEventListener('wheel', (e) => {
     drawAll();
 });
 
+// Click + drag: pan
+// Shift + click + drag: move pin
+// Control + click + drag: ruler
+// Control + Shift + click: ruler mode
+let moved = false;
 document.getElementById("anno").addEventListener('mousemove', (e) => {
     e.preventDefault();
     mouseX = e.clientX;
     mouseY = e.clientY;
+    moved = true;
 
-    if (e.metaKey) {
+    if (e.ctrlKey) {
         if (ruler0 == null) {
             ruler0 = pixelToMap(mouseX, mouseY);
         }
@@ -276,11 +282,19 @@ document.getElementById("anno").addEventListener('dblclick', (e) => {
 
 var temp = []
 document.getElementById("anno").addEventListener('click', (e) => {
+    if (moved) {
+        return;
+    }
     focusOn(hovered);
-} );
+});
 
+document.getElementById("anno").addEventListener('mousedown', (e) => {
+    moved = false;
+});
+
+let blockRuler = false;
 document.addEventListener('keydown', (e) => {
-    if (focused !== null && e.metaKey) {
+    if (focused !== null && e.ctrlKey) {
         if (e.key == 'Backspace') {
             delete loc.pins[focused];
             focused = null;
@@ -304,13 +318,17 @@ document.addEventListener('keydown', (e) => {
         }
     }
 
-    if (e.key = 'Meta' && !e.ctrlKey) {
+    if (e.key = 'Control' && !e.shiftKey) {
+        if (blockRuler) {
+            return;
+        }
+        blockRuler = true;
         ruler0 = null;
         ruler1 = null;
         drawAnno();
     }
 
-    if (e.metaKey && e.key == 'Control') {
+    if (e.ctrlKey && e.key == 'Shift') {
         rulerMode = (rulerMode + 1) % rulerModes.length;
         drawAnno();
     }
@@ -324,6 +342,13 @@ document.addEventListener('keydown', (e) => {
         temp = [];
     }
 } );
+
+
+document.addEventListener('keyup', (e) => {
+    if (e.key = 'Control') {
+        blockRuler = false;
+    }
+});
 
 function drawAll() {
     const canvas = document.getElementById("map");
@@ -550,11 +575,17 @@ function updateTimeline(tz, wz) {
         document.getElementById("topBar").style.display = "none";
         return;
     }
-    let start = nowLocal(tz);
-    if (timelineCache && tz == timelineCache.tz && wz == timelineCache.wz && start == timelineCache.start) {
+    let now = nowLocal(tz)
+    let start = now - 2;
+    if (timelineCache 
+        && tz == timelineCache.tz 
+        && wz == timelineCache.wz 
+        && start == timelineCache.start
+        && ruler0 == timelineCache.ruler0
+        && ruler1 == timelineCache.ruler1) {
         return;
     }
-    timelineCache = {tz, wz, start};
+    timelineCache = {tz, wz, start, ruler0, ruler1};
 
     // Rows:
     // Weather, an item is added every 4 hours. Hovering gives details, and color is the condition
@@ -583,28 +614,42 @@ function updateTimeline(tz, wz) {
     let hourWidth = 15;
     let dayWidth = 24 * hourWidth;
 
-    let days = 200;
+    let days = 100;
 
     let dt2px = (dt) => (dt - start) * dayWidth;
 
     let prevL = {};
-    let createItem = (m, l, start, end, text, color) => {
+    let flushElem = (m) => {
+        let elem = prevL[m];
+        let item = document.createElement("div");
+        item.style.width = dt2px(elem.end) - dt2px(elem.start) + "px";
+        item.style.left = dt2px(elem.start) + "px";
+        item.style.backgroundColor = elem.color;
+        item.style.borderBottomColor = "#fc6";
+        item.style.borderBottomStyle = "solid";
+        item.style.borderBottomWidth = elem.ul ? "2px" : "0";
+        item.innerText = elem.text;
+        item.classList.add("timeitem");
+        elem.l.appendChild(item);
+        prevL[m] = null;
+    }
+
+    let createItem = (m, l, start, end, text, color, ul) => {
         let prev = prevL[m];
-        if (prev && Math.abs(prev.end - start) < 0.0001 && prev.text == text && prev.color == color && Math.floor(prev.start) == Math.floor(start)) {
+        if (prev 
+            && Math.abs(prev.end - start) < 0.0001 
+            && prev.text == text && prev.color == color 
+            && Math.floor(prev.start) == Math.floor(start) 
+            && prev.l == l
+            && prev.ul == ul) {
             prev.end = end;
             return;
         }
         else if (prev) {
-            let item = document.createElement("div");
-            item.style.width = dt2px(prev.end) - dt2px(prev.start) + "px";
-            item.style.left = dt2px(prev.start) + "px";
-            item.style.backgroundColor = prev.color;
-            item.innerText = prev.text;
-            item.classList.add("timeitem");
-            l.appendChild(item);
+            flushElem(m);
         }
 
-        prevL[m] = {start, end, text, color};
+        prevL[m] = {start, end, text, color, l, ul};
     }
 
     timelabel.innerText = tz;
@@ -626,14 +671,14 @@ function updateTimeline(tz, wz) {
         if (hour == 1) {
             t = ["HR", "HA", "HO", "EY"][getSeason(hourStart)];
         }
-
         createItem(
             0,
             timeline,
             hourStart, 
             hourStart + 1/24, 
             t, 
-            hour <= 2 ? "#081122" : color);
+            hour <= 2 ? "#081122" : color, 
+            hourStart < now && now < hourStart + 1/24);
 
         if (hour == 1 && dayOfYear in holidays[tz]) {
             createItem(
@@ -716,14 +761,14 @@ function updateTimeline(tz, wz) {
         let m = rulerModes[rulerMode];
         let t_days = estimateTime(d_miles, m.miles_per_hour, m.miles_per_day);
 
-        for (let d = 0; d < t_days; d++) {
+        for (let d = 0; d <= t_days; d++) {
             let hoursPerDay = m.miles_per_day / m.miles_per_hour;
-
+            console.log(t_days, d, t_days - d, t_days - d < 1);
             createItem(
                 5,
                 travelline,
-                start + d,
-                start + Math.min(t_days, d + hoursPerDay / 24),
+                now + d,
+                now + d + Math.min(hoursPerDay / 24, (t_days - d)),
                 "Travel " + (d + 1),
                 "#BB7733");
 
@@ -731,12 +776,19 @@ function updateTimeline(tz, wz) {
                 createItem(
                     6,
                     travelline,
-                    start + d + hoursPerDay / 24,
-                    start + d + 1,
+                    now + d + hoursPerDay / 24,
+                    now + d + 1,
                     "Rest " + (d + 1),
                     "#3377BB"
                 );
             }
+        }
+    }
+
+    // flush prevL
+    for (let k of Object.keys(prevL)) {
+        if (prevL[k]) {
+            flushElem(k);
         }
     }
 }
